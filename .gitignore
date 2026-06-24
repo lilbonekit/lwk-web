@@ -1,0 +1,20 @@
+# Build output
+target/
+
+# IDE/editors (optional but common minimal)
+**/.DS_Store
+.idea/
+.vscode/
+.cache
+.env
+
+# Debugging data
+logs.md
+tmp_vendor
+
+configuration.yaml
+pkg_web_from_docker
+node_modules/
+.pnpm-store/
+.modules.yaml
+.pnpm-workspace-state-v1.json

@@ -1,0 +1,23 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      lwk-web:
+        specifier: github:lilbonekit/lwk-web
+        version: https://codeload.github.com/lilbonekit/lwk-web/tar.gz/2d376fd10f78c5dd1054a5e8a2aadb95e0403677
+
+packages:
+
+  lwk-web@https://codeload.github.com/lilbonekit/lwk-web/tar.gz/2d376fd10f78c5dd1054a5e8a2aadb95e0403677:
+    resolution: {tarball: https://codeload.github.com/lilbonekit/lwk-web/tar.gz/2d376fd10f78c5dd1054a5e8a2aadb95e0403677}
+    version: 0.0.0
+
+snapshots:
+
+  lwk-web@https://codeload.github.com/lilbonekit/lwk-web/tar.gz/2d376fd10f78c5dd1054a5e8a2aadb95e0403677: {}
