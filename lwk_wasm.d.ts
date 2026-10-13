@@ -1,6 +1,19 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
+ * Generate the asset entropy from the issuance prevout and the contract hash.
+ */
+export function generateAssetEntropy(outpoint: OutPoint, contract_hash: ContractHash): ContractHash;
+/**
+ * Compute the asset ID from an issuance outpoint and contract hash.
+ */
+export function assetIdFromIssuance(outpoint: OutPoint, contract_hash: ContractHash): AssetId;
+/**
+ * Compute the reissuance token ID from an issuance outpoint and contract hash.
+ */
+export function reissuanceTokenFromIssuance(outpoint: OutPoint, contract_hash: ContractHash, is_confidential: boolean): AssetId;
+export function searchLedgerDevice(): Promise<HIDDevice>;
+/**
  * Convert bytes to hex string.
  * TODO: this is a function for convenience, it is going to be deleted after all interfaces are
  * finalized (simplicity related)
@@ -24,19 +37,6 @@ export function simplicityControlBlock(cmr: Cmr, internal_key: XOnlyPublicKey): 
  * for example in html: `style="image-rendering: pixelated; border: 20px solid white;"`
  */
 export function stringToQr(str: string, pixel_per_module?: number | null): string;
-export function searchLedgerDevice(): Promise<HIDDevice>;
-/**
- * Generate the asset entropy from the issuance prevout and the contract hash.
- */
-export function generateAssetEntropy(outpoint: OutPoint, contract_hash: ContractHash): ContractHash;
-/**
- * Compute the asset ID from an issuance outpoint and contract hash.
- */
-export function assetIdFromIssuance(outpoint: OutPoint, contract_hash: ContractHash): AssetId;
-/**
- * Compute the reissuance token ID from an issuance outpoint and contract hash.
- */
-export function reissuanceTokenFromIssuance(outpoint: OutPoint, contract_hash: ContractHash, is_confidential: boolean): AssetId;
 /**
  * Wallet chain
  */
@@ -2630,6 +2630,16 @@ export class TxBuilder {
    */
   liquidexTake(proposals: ValidatedLiquidexProposal[]): TxBuilder;
   /**
+   * Return the PSET without blinding it: outputs keep explicit amounts and their blinding
+   * pubkey, so another party (e.g. the wallet that knows the inputs' blinding factors)
+   * can blind them later. External UTXOs may then use secrets without blinding factors.
+   */
+  skipBlinding(): TxBuilder;
+  /**
+   * Send every change output to `address` instead of a wallet change address
+   */
+  setChangeAddress(address: Address): TxBuilder;
+  /**
    * Add input rangeproofs
    */
   addInputRangeproofs(add_rangeproofs: boolean): TxBuilder;
@@ -3237,6 +3247,22 @@ export class Wollet {
   free(): void;
   [Symbol.dispose](): void;
   /**
+   * Get the transaction list
+   *
+   * **Experimental**: This API may change without notice.
+   */
+  txs(opt: TxsOpt): TxDetails[];
+  /**
+   * Number of transactions
+   */
+  numTxs(): number;
+  /**
+   * Get the details of a transaction
+   *
+   * **Experimental**: This API may change without notice.
+   */
+  txDetails(txid: Txid, opt: TxOpt): TxDetails | undefined;
+  /**
    * Create a `Wollet`
    */
   constructor(network: Network, descriptor: WolletDescriptor);
@@ -3350,22 +3376,6 @@ export class Wollet {
    * Whether the wallet is AMP0
    */
   isAmp0(): boolean;
-  /**
-   * Get the transaction list
-   *
-   * **Experimental**: This API may change without notice.
-   */
-  txs(opt: TxsOpt): TxDetails[];
-  /**
-   * Number of transactions
-   */
-  numTxs(): number;
-  /**
-   * Get the details of a transaction
-   *
-   * **Experimental**: This API may change without notice.
-   */
-  txDetails(txid: Txid, opt: TxOpt): TxDetails | undefined;
 }
 /**
  * A builder for constructing [`Wollet`] instances.
@@ -3513,6 +3523,220 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
+  readonly __wbg_assetid_free: (a: number, b: number) => void;
+  readonly __wbg_assetids_free: (a: number, b: number) => void;
+  readonly assetid_fromString: (a: number, b: number) => [number, number, number];
+  readonly assetid_fromBytes: (a: number, b: number) => [number, number, number];
+  readonly assetid_toBytes: (a: number) => [number, number];
+  readonly assetid_toString: (a: number) => [number, number];
+  readonly generateAssetEntropy: (a: number, b: number) => [number, number, number];
+  readonly assetIdFromIssuance: (a: number, b: number) => number;
+  readonly reissuanceTokenFromIssuance: (a: number, b: number, c: number) => number;
+  readonly assetids_empty: () => [number, number, number];
+  readonly assetids_toString: (a: number) => [number, number];
+  readonly __wbg_outpoint_free: (a: number, b: number) => void;
+  readonly outpoint_new: (a: number, b: number) => [number, number, number];
+  readonly outpoint_fromParts: (a: number, b: number) => number;
+  readonly outpoint_txid: (a: number) => number;
+  readonly outpoint_vout: (a: number) => number;
+  readonly __wbg_script_free: (a: number, b: number) => void;
+  readonly script_new: (a: number, b: number) => [number, number, number];
+  readonly script_empty: () => number;
+  readonly script_bytes: (a: number) => [number, number];
+  readonly script_jet_sha256_hex: (a: number) => [number, number];
+  readonly script_asm: (a: number) => [number, number];
+  readonly script_newOpReturn: (a: number, b: number) => number;
+  readonly script_isProvablyUnspendable: (a: number) => number;
+  readonly script_isProvablySegwit: (a: number, b: number) => number;
+  readonly script_toString: (a: number) => [number, number];
+  readonly __wbg_transaction_free: (a: number, b: number) => void;
+  readonly transaction_new: (a: number, b: number) => [number, number, number];
+  readonly transaction_fromString: (a: number, b: number) => [number, number, number];
+  readonly transaction_fromBytes: (a: number, b: number) => [number, number, number];
+  readonly transaction_txid: (a: number) => number;
+  readonly transaction_bytes: (a: number) => [number, number];
+  readonly transaction_fee: (a: number, b: number) => bigint;
+  readonly transaction_toString: (a: number) => [number, number];
+  readonly transaction_inputs: (a: number) => [number, number];
+  readonly transaction_outputs: (a: number) => [number, number];
+  readonly __wbg_txid_free: (a: number, b: number) => void;
+  readonly txid_new: (a: number, b: number) => [number, number, number];
+  readonly txid_toString: (a: number) => [number, number];
+  readonly __wbg_transactioneditor_free: (a: number, b: number) => void;
+  readonly transactioneditor_fromTransaction: (a: number) => number;
+  readonly transactioneditor_setInputWitness: (a: number, b: number, c: number) => [number, number, number];
+  readonly transactioneditor_build: (a: number) => number;
+  readonly __wbg_txin_free: (a: number, b: number) => void;
+  readonly txin_outpoint: (a: number) => number;
+  readonly txin_witness: (a: number) => number;
+  readonly txin_sequence: (a: number) => number;
+  readonly __wbg_txinwitness_free: (a: number, b: number) => void;
+  readonly txinwitness_empty: () => number;
+  readonly txinwitness_fromScriptWitness: (a: number, b: number) => [number, number, number];
+  readonly txinwitness_script_witness: (a: number) => [number, number];
+  readonly txinwitness_pegin_witness: (a: number) => [number, number];
+  readonly txinwitness_isEmpty: (a: number) => number;
+  readonly __wbg_txinwitnessbuilder_free: (a: number, b: number) => void;
+  readonly txinwitnessbuilder_scriptWitness: (a: number, b: number, c: number) => [number, number, number];
+  readonly txinwitnessbuilder_peginWitness: (a: number, b: number, c: number) => [number, number, number];
+  readonly txinwitnessbuilder_amountRangeproof: (a: number, b: number, c: number) => [number, number, number];
+  readonly txinwitnessbuilder_inflationKeysRangeproof: (a: number, b: number, c: number) => [number, number, number];
+  readonly txinwitnessbuilder_build: (a: number) => number;
+  readonly __wbg_txout_free: (a: number, b: number) => void;
+  readonly txout_fromExplicit: (a: number, b: number, c: bigint) => number;
+  readonly txout_scriptPubkey: (a: number) => number;
+  readonly txout_isFee: (a: number) => number;
+  readonly txout_isPartiallyBlinded: (a: number) => number;
+  readonly txout_asset: (a: number) => number;
+  readonly txout_value: (a: number) => [number, bigint];
+  readonly txout_unconfidentialAddress: (a: number, b: number) => number;
+  readonly txout_unblind: (a: number, b: number) => [number, number, number];
+  readonly __wbg_wallettx_free: (a: number, b: number) => void;
+  readonly wallettx_tx: (a: number) => number;
+  readonly wallettx_balance: (a: number) => number;
+  readonly wallettx_txid: (a: number) => number;
+  readonly wallettx_fee: (a: number) => bigint;
+  readonly wallettx_txType: (a: number) => [number, number];
+  readonly wallettx_inputs: (a: number) => [number, number];
+  readonly wallettx_outputs: (a: number) => [number, number];
+  readonly wallettx_unblindedUrl: (a: number, b: number, c: number) => [number, number];
+  readonly __wbg_mnemonic_free: (a: number, b: number) => void;
+  readonly mnemonic_new: (a: number, b: number) => [number, number, number];
+  readonly mnemonic_toString: (a: number) => [number, number];
+  readonly mnemonic_fromEntropy: (a: number, b: number) => [number, number, number];
+  readonly mnemonic_fromRandom: (a: number) => [number, number, number];
+  readonly __wbg_psetdetails_free: (a: number, b: number) => void;
+  readonly __wbg_psetbalance_free: (a: number, b: number) => void;
+  readonly __wbg_psetsignatures_free: (a: number, b: number) => void;
+  readonly __wbg_issuance_free: (a: number, b: number) => void;
+  readonly __wbg_recipient_free: (a: number, b: number) => void;
+  readonly psetdetails_balance: (a: number) => number;
+  readonly psetdetails_signatures: (a: number) => [number, number];
+  readonly psetdetails_fingerprintsMissing: (a: number) => [number, number];
+  readonly psetdetails_fingerprintsHas: (a: number) => [number, number];
+  readonly psetdetails_inputsIssuances: (a: number) => [number, number];
+  readonly psetbalance_fee: (a: number) => bigint;
+  readonly psetbalance_balances: (a: number) => number;
+  readonly psetbalance_recipients: (a: number) => [number, number];
+  readonly psetsignatures_hasSignature: (a: number) => any;
+  readonly psetsignatures_missingSignature: (a: number) => any;
+  readonly issuance_asset: (a: number) => number;
+  readonly issuance_token: (a: number) => number;
+  readonly issuance_prevVout: (a: number) => number;
+  readonly issuance_prevTxid: (a: number) => number;
+  readonly issuance_isIssuance: (a: number) => number;
+  readonly issuance_isReissuance: (a: number) => number;
+  readonly recipient_asset: (a: number) => number;
+  readonly recipient_value: (a: number) => [number, bigint];
+  readonly recipient_address: (a: number) => number;
+  readonly recipient_vout: (a: number) => number;
+  readonly __wbg_registry_free: (a: number, b: number) => void;
+  readonly __wbg_registrydata_free: (a: number, b: number) => void;
+  readonly __wbg_assetmeta_free: (a: number, b: number) => void;
+  readonly __wbg_registrypost_free: (a: number, b: number) => void;
+  readonly assetmeta_contract: (a: number) => number;
+  readonly assetmeta_tx: (a: number) => number;
+  readonly registrypost_new: (a: number, b: number) => number;
+  readonly registrypost_toString: (a: number) => [number, number];
+  readonly registry_new: (a: number, b: number, c: number) => any;
+  readonly registry_defaultForNetwork: (a: number, b: number) => any;
+  readonly registry_defaultHardcodedForNetwork: (a: number) => [number, number, number];
+  readonly registry_fetchWithTx: (a: number, b: number, c: number) => any;
+  readonly registry_post: (a: number, b: number) => any;
+  readonly registry_get: (a: number, b: number) => number;
+  readonly registry_getAssetOfToken: (a: number, b: number) => number;
+  readonly registry_addContracts: (a: number, b: number) => [number, number, number];
+  readonly registrydata_precision: (a: number) => number;
+  readonly registrydata_ticker: (a: number) => [number, number];
+  readonly registrydata_name: (a: number) => [number, number];
+  readonly registrydata_domain: (a: number) => [number, number];
+  readonly __wbg_txdetails_free: (a: number, b: number) => void;
+  readonly txdetails_tx: (a: number) => number;
+  readonly txdetails_txid: (a: number) => number;
+  readonly txdetails_height: (a: number) => number;
+  readonly txdetails_timestamp: (a: number) => number;
+  readonly txdetails_txType: (a: number) => [number, number];
+  readonly txdetails_balance: (a: number) => number;
+  readonly txdetails_feesAsset: (a: number, b: number) => bigint;
+  readonly txdetails_unblindedUrl: (a: number, b: number, c: number) => [number, number];
+  readonly txdetails_inputs: (a: number) => [number, number];
+  readonly txdetails_outputs: (a: number) => [number, number];
+  readonly __wbg_txoutdetails_free: (a: number, b: number) => void;
+  readonly txoutdetails_outpoint: (a: number) => number;
+  readonly txoutdetails_script_pubkey: (a: number) => number;
+  readonly txoutdetails_height: (a: number) => number;
+  readonly txoutdetails_address: (a: number) => number;
+  readonly txoutdetails_unblinded: (a: number) => number;
+  readonly txoutdetails_is_explicit: (a: number) => number;
+  readonly txoutdetails_is_spent: (a: number) => number;
+  readonly __wbg_txsopt_free: (a: number, b: number) => void;
+  readonly txsopt_default: () => number;
+  readonly txsopt_withPagination: (a: number, b: number) => number;
+  readonly __wbg_txopt_free: (a: number, b: number) => void;
+  readonly txopt_default: () => number;
+  readonly wollet_txs: (a: number, b: number) => [number, number, number, number];
+  readonly wollet_numTxs: (a: number) => [number, number, number];
+  readonly wollet_txDetails: (a: number, b: number, c: number) => [number, number, number];
+  readonly transaction_toBytes: (a: number) => [number, number];
+  readonly txinwitnessbuilder_new: () => number;
+  readonly wallettx_height: (a: number) => number;
+  readonly wallettx_timestamp: (a: number) => number;
+  readonly assetid_new: (a: number, b: number) => [number, number, number];
+  readonly __wbg_ledgerweb_free: (a: number, b: number) => void;
+  readonly ledgerweb_new: (a: any, b: number) => number;
+  readonly ledgerweb_getVersion: (a: number) => any;
+  readonly ledgerweb_deriveXpub: (a: number, b: number, c: number) => any;
+  readonly ledgerweb_slip77MasterBlindingKey: (a: number) => any;
+  readonly ledgerweb_fingerprint: (a: number) => any;
+  readonly ledgerweb_wpkhSlip77Descriptor: (a: number) => any;
+  readonly ledgerweb_sign: (a: number, b: number) => any;
+  readonly ledgerweb_getReceiveAddressSingle: (a: number, b: number) => any;
+  readonly searchLedgerDevice: () => any;
+  readonly __wbg_unvalidatedliquidexproposal_free: (a: number, b: number) => void;
+  readonly __wbg_assetamount_free: (a: number, b: number) => void;
+  readonly unvalidatedliquidexproposal_new: (a: number, b: number) => [number, number, number];
+  readonly unvalidatedliquidexproposal_fromPset: (a: number) => [number, number, number];
+  readonly unvalidatedliquidexproposal_insecureValidate: (a: number) => [number, number, number];
+  readonly unvalidatedliquidexproposal_validate: (a: number, b: number) => [number, number, number];
+  readonly unvalidatedliquidexproposal_toString: (a: number) => [number, number];
+  readonly assetamount_amount: (a: number) => bigint;
+  readonly assetamount_asset: (a: number) => number;
+  readonly validatedliquidexproposal_input: (a: number) => number;
+  readonly validatedliquidexproposal_output: (a: number) => number;
+  readonly validatedliquidexproposal_toString: (a: number) => [number, number];
+  readonly __wbg_simplicityarguments_free: (a: number, b: number) => void;
+  readonly simplicityarguments_new: () => number;
+  readonly simplicityarguments_addValue: (a: number, b: number, c: number, d: number) => number;
+  readonly __wbg_simplicityprogram_free: (a: number, b: number) => void;
+  readonly simplicityprogram_load: (a: number, b: number, c: number) => [number, number, number];
+  readonly simplicityprogram_cmr: (a: number) => number;
+  readonly simplicityprogram_createP2trAddress: (a: number, b: number, c: number) => [number, number, number];
+  readonly simplicityprogram_controlBlock: (a: number, b: number) => [number, number, number];
+  readonly simplicityprogram_getSighashAll: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => [number, number, number, number];
+  readonly simplicityprogram_finalizeTransaction: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number, number];
+  readonly simplicityprogram_createP2pkSignature: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number, number, number];
+  readonly simplicityprogram_finalizeTransactionWithSpendInfo: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number, number];
+  readonly simplicityprogram_run: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number, number];
+  readonly __wbg_statetaprootbuilder_free: (a: number, b: number) => void;
+  readonly statetaprootbuilder_new: () => number;
+  readonly statetaprootbuilder_addSimplicityLeaf: (a: number, b: number, c: number) => [number, number, number];
+  readonly statetaprootbuilder_addDataLeaf: (a: number, b: number, c: number, d: number) => [number, number, number];
+  readonly statetaprootbuilder_addHiddenHash: (a: number, b: number, c: number, d: number) => [number, number, number];
+  readonly statetaprootbuilder_finalize: (a: number, b: number) => [number, number, number];
+  readonly __wbg_statetaprootspendinfo_free: (a: number, b: number) => void;
+  readonly statetaprootspendinfo_output_key: (a: number) => number;
+  readonly statetaprootspendinfo_output_key_parity: (a: number) => number;
+  readonly statetaprootspendinfo_internal_key: (a: number) => number;
+  readonly statetaprootspendinfo_merkle_root: (a: number) => [number, number];
+  readonly statetaprootspendinfo_controlBlock: (a: number, b: number) => [number, number, number];
+  readonly statetaprootspendinfo_script_pubkey: (a: number) => number;
+  readonly bytesToHex: (a: number, b: number) => [number, number];
+  readonly simplicityDeriveXonlyPubkey: (a: number, b: number, c: number) => [number, number, number];
+  readonly simplicityControlBlock: (a: number, b: number) => [number, number, number];
+  readonly simplicitywitnessvalues_new: () => number;
+  readonly __wbg_simplicitywitnessvalues_free: (a: number, b: number) => void;
+  readonly __wbg_validatedliquidexproposal_free: (a: number, b: number) => void;
+  readonly simplicitywitnessvalues_addValue: (a: number, b: number, c: number, d: number) => number;
   readonly __wbg_balance_free: (a: number, b: number) => void;
   readonly balance_toJSON: (a: number) => [number, number, number];
   readonly balance_entries: (a: number) => [number, number, number];
@@ -3593,6 +3817,8 @@ export interface InitOutput {
   readonly txbuilder_toString: (a: number) => [number, number];
   readonly txbuilder_liquidexMake: (a: number, b: number, c: number, d: bigint, e: number) => [number, number, number];
   readonly txbuilder_liquidexTake: (a: number, b: number, c: number) => [number, number, number];
+  readonly txbuilder_skipBlinding: (a: number) => number;
+  readonly txbuilder_setChangeAddress: (a: number, b: number) => number;
   readonly txbuilder_addInputRangeproofs: (a: number, b: number) => number;
   readonly txbuilder_setFallbackLocktimeHeight: (a: number, b: number) => [number, number, number];
   readonly __wbg_update_free: (a: number, b: number) => void;
@@ -3626,56 +3852,6 @@ export interface InitOutput {
   readonly tip_height: (a: number) => number;
   readonly tip_hash: (a: number) => [number, number];
   readonly tip_timestamp: (a: number) => number;
-  readonly __wbg_unvalidatedliquidexproposal_free: (a: number, b: number) => void;
-  readonly __wbg_assetamount_free: (a: number, b: number) => void;
-  readonly unvalidatedliquidexproposal_new: (a: number, b: number) => [number, number, number];
-  readonly unvalidatedliquidexproposal_fromPset: (a: number) => [number, number, number];
-  readonly unvalidatedliquidexproposal_insecureValidate: (a: number) => [number, number, number];
-  readonly unvalidatedliquidexproposal_validate: (a: number, b: number) => [number, number, number];
-  readonly unvalidatedliquidexproposal_toString: (a: number) => [number, number];
-  readonly assetamount_amount: (a: number) => bigint;
-  readonly assetamount_asset: (a: number) => number;
-  readonly validatedliquidexproposal_input: (a: number) => number;
-  readonly validatedliquidexproposal_output: (a: number) => number;
-  readonly validatedliquidexproposal_toString: (a: number) => [number, number];
-  readonly __wbg_simplicityarguments_free: (a: number, b: number) => void;
-  readonly simplicityarguments_new: () => number;
-  readonly simplicityarguments_addValue: (a: number, b: number, c: number, d: number) => number;
-  readonly __wbg_simplicityprogram_free: (a: number, b: number) => void;
-  readonly simplicityprogram_load: (a: number, b: number, c: number) => [number, number, number];
-  readonly simplicityprogram_cmr: (a: number) => number;
-  readonly simplicityprogram_createP2trAddress: (a: number, b: number, c: number) => [number, number, number];
-  readonly simplicityprogram_controlBlock: (a: number, b: number) => [number, number, number];
-  readonly simplicityprogram_getSighashAll: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => [number, number, number, number];
-  readonly simplicityprogram_finalizeTransaction: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number, number];
-  readonly simplicityprogram_createP2pkSignature: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number, number, number];
-  readonly simplicityprogram_finalizeTransactionWithSpendInfo: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number, number];
-  readonly simplicityprogram_run: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number, number];
-  readonly __wbg_simplicityrunresult_free: (a: number, b: number) => void;
-  readonly simplicityrunresult_program_bytes: (a: number) => [number, number];
-  readonly simplicityrunresult_witness_bytes: (a: number) => [number, number];
-  readonly simplicityrunresult_cmr: (a: number) => number;
-  readonly simplicityrunresult_value: (a: number) => [number, number];
-  readonly __wbg_statetaprootbuilder_free: (a: number, b: number) => void;
-  readonly statetaprootbuilder_new: () => number;
-  readonly statetaprootbuilder_addSimplicityLeaf: (a: number, b: number, c: number) => [number, number, number];
-  readonly statetaprootbuilder_addDataLeaf: (a: number, b: number, c: number, d: number) => [number, number, number];
-  readonly statetaprootbuilder_addHiddenHash: (a: number, b: number, c: number, d: number) => [number, number, number];
-  readonly statetaprootbuilder_finalize: (a: number, b: number) => [number, number, number];
-  readonly __wbg_statetaprootspendinfo_free: (a: number, b: number) => void;
-  readonly statetaprootspendinfo_output_key: (a: number) => number;
-  readonly statetaprootspendinfo_output_key_parity: (a: number) => number;
-  readonly statetaprootspendinfo_internal_key: (a: number) => number;
-  readonly statetaprootspendinfo_merkle_root: (a: number) => [number, number];
-  readonly statetaprootspendinfo_controlBlock: (a: number, b: number) => [number, number, number];
-  readonly statetaprootspendinfo_script_pubkey: (a: number) => number;
-  readonly bytesToHex: (a: number, b: number) => [number, number];
-  readonly simplicityDeriveXonlyPubkey: (a: number, b: number, c: number) => [number, number, number];
-  readonly simplicityControlBlock: (a: number, b: number) => [number, number, number];
-  readonly simplicitywitnessvalues_new: () => number;
-  readonly __wbg_simplicitywitnessvalues_free: (a: number, b: number) => void;
-  readonly __wbg_validatedliquidexproposal_free: (a: number, b: number) => void;
-  readonly simplicitywitnessvalues_addValue: (a: number, b: number, c: number, d: number) => number;
   readonly __wbg_bip_free: (a: number, b: number) => void;
   readonly bip_bip49: () => number;
   readonly bip_bip84: () => number;
@@ -3697,20 +3873,10 @@ export interface InitOutput {
   readonly txsequence_isHeightLocked: (a: number) => number;
   readonly txsequence_isTimeLocked: (a: number) => number;
   readonly txsequence_enablesAbsoluteLockTime: (a: number) => number;
-  readonly __wbg_wallettx_free: (a: number, b: number) => void;
-  readonly wallettx_tx: (a: number) => number;
-  readonly wallettx_height: (a: number) => number;
-  readonly wallettx_balance: (a: number) => number;
-  readonly wallettx_txid: (a: number) => number;
-  readonly wallettx_fee: (a: number) => bigint;
-  readonly wallettx_txType: (a: number) => [number, number];
-  readonly wallettx_timestamp: (a: number) => number;
-  readonly wallettx_inputs: (a: number) => [number, number];
-  readonly wallettx_outputs: (a: number) => [number, number];
-  readonly wallettx_unblindedUrl: (a: number, b: number, c: number) => [number, number];
   readonly __wbg_wallettxout_free: (a: number, b: number) => void;
   readonly wallettxout_outpoint: (a: number) => number;
   readonly wallettxout_scriptPubkey: (a: number) => number;
+  readonly wallettxout_height: (a: number) => number;
   readonly wallettxout_unblinded: (a: number) => number;
   readonly wallettxout_wildcardIndex: (a: number) => number;
   readonly wallettxout_extInt: (a: number) => number;
@@ -3788,8 +3954,12 @@ export interface InitOutput {
   readonly jsteststore_write: (a: number, b: number, c: number, d: number, e: number) => [number, number];
   readonly jsteststore_read: (a: number, b: number, c: number) => [number, number, number, number];
   readonly jsteststore_remove: (a: number, b: number, c: number) => [number, number];
+  readonly __wbg_simplicityrunresult_free: (a: number, b: number) => void;
+  readonly simplicityrunresult_program_bytes: (a: number) => [number, number];
+  readonly simplicityrunresult_witness_bytes: (a: number) => [number, number];
+  readonly simplicityrunresult_cmr: (a: number) => number;
+  readonly simplicityrunresult_value: (a: number) => [number, number];
   readonly stringToQr: (a: number, b: number, c: number) => [number, number, number, number];
-  readonly wallettxout_height: (a: number) => number;
   readonly txsequence_from_consensus: (a: number) => number;
   readonly jsteststore_new: (a: any) => number;
   readonly __wbg_simplicitytype_free: (a: number, b: number) => void;
@@ -3821,129 +3991,6 @@ export interface InitOutput {
   readonly simplicitytypedvalue_some: (a: number) => number;
   readonly simplicitytypedvalue_fromByteArrayHex: (a: number, b: number) => [number, number, number];
   readonly simplicitytypedvalue_parse: (a: number, b: number, c: number) => [number, number, number];
-  readonly __wbg_blockheader_free: (a: number, b: number) => void;
-  readonly blockheader_blockHash: (a: number) => [number, number];
-  readonly blockheader_prevBlockhash: (a: number) => [number, number];
-  readonly blockheader_merkleRoot: (a: number) => [number, number];
-  readonly blockheader_time: (a: number) => number;
-  readonly blockheader_version: (a: number) => number;
-  readonly blockheader_height: (a: number) => number;
-  readonly __wbg_locktime_free: (a: number, b: number) => void;
-  readonly locktime_from_consensus: (a: number) => number;
-  readonly locktime_from_height: (a: number) => [number, number, number];
-  readonly locktime_from_time: (a: number) => [number, number, number];
-  readonly locktime_zero: () => number;
-  readonly locktime_toConsensusU32: (a: number) => number;
-  readonly locktime_isBlockHeight: (a: number) => number;
-  readonly locktime_isBlockTime: (a: number) => number;
-  readonly locktime_toString: (a: number) => [number, number];
-  readonly __wbg_network_free: (a: number, b: number) => void;
-  readonly network_mainnet: () => number;
-  readonly network_testnet: () => number;
-  readonly network_regtest: (a: number) => number;
-  readonly network_regtestDefault: () => number;
-  readonly network_defaultEsploraClient: (a: number) => number;
-  readonly network_isMainnet: (a: number) => number;
-  readonly network_isTestnet: (a: number) => number;
-  readonly network_isRegtest: (a: number) => number;
-  readonly network_toString: (a: number) => [number, number];
-  readonly network_policyAsset: (a: number) => number;
-  readonly network_genesisBlockHash: (a: number) => [number, number];
-  readonly network_txBuilder: (a: number) => number;
-  readonly network_defaultExplorerUrl: (a: number) => [number, number];
-  readonly __wbg_tweak_free: (a: number, b: number) => void;
-  readonly tweak_fromBytes: (a: number, b: number) => [number, number, number];
-  readonly tweak_fromString: (a: number, b: number) => [number, number, number];
-  readonly tweak_zero: () => number;
-  readonly tweak_toBytes: (a: number) => [number, number];
-  readonly tweak_toString: (a: number) => [number, number];
-  readonly __wbg_xonlypublickey_free: (a: number, b: number) => void;
-  readonly xonlypublickey_fromString: (a: number, b: number) => [number, number, number];
-  readonly xonlypublickey_fromBytes: (a: number, b: number) => [number, number, number];
-  readonly xonlypublickey_toBytes: (a: number) => [number, number];
-  readonly xonlypublickey_toString: (a: number) => [number, number];
-  readonly __wbg_xpub_free: (a: number, b: number) => void;
-  readonly xpub_new: (a: number, b: number) => [number, number, number];
-  readonly xpub_toString: (a: number) => [number, number];
-  readonly xpub_identifier: (a: number) => [number, number];
-  readonly xpub_fingerprint: (a: number) => [number, number];
-  readonly xpub_isValidWithKeyOrigin: (a: number, b: number) => number;
-  readonly __wbg_amp2_free: (a: number, b: number) => void;
-  readonly __wbg_amp2descriptor_free: (a: number, b: number) => void;
-  readonly amp2descriptor_descriptor: (a: number) => number;
-  readonly amp2descriptor_toString: (a: number) => [number, number];
-  readonly amp2_new: (a: number, b: number, c: number, d: number) => [number, number, number];
-  readonly amp2_newTestnet: () => number;
-  readonly amp2_descriptorFromStr: (a: number, b: number, c: number, d: number, e: number) => [number, number, number];
-  readonly amp2_register: (a: number, b: number) => any;
-  readonly amp2_cosign: (a: number, b: number) => any;
-  readonly __wbg_contract_free: (a: number, b: number) => void;
-  readonly contract_new: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number) => [number, number, number];
-  readonly contract_toString: (a: number) => [number, number];
-  readonly contract_domain: (a: number) => [number, number];
-  readonly contract_clone: (a: number) => number;
-  readonly __wbg_wolletdescriptor_free: (a: number, b: number) => void;
-  readonly wolletdescriptor_new: (a: number, b: number) => [number, number, number];
-  readonly wolletdescriptor_toString: (a: number) => [number, number];
-  readonly wolletdescriptor_newMultiWshSlip77: (a: number, b: number, c: number) => [number, number, number];
-  readonly wolletdescriptor_isMainnet: (a: number) => number;
-  readonly wolletdescriptor_isAmp0: (a: number) => number;
-  readonly __wbg_magicroutinghint_free: (a: number, b: number) => void;
-  readonly magicroutinghint_address: (a: number) => [number, number];
-  readonly magicroutinghint_amount: (a: number) => bigint;
-  readonly magicroutinghint_uri: (a: number) => [number, number];
-  readonly __wbg_externalutxo_free: (a: number, b: number) => void;
-  readonly externalutxo_new: (a: number, b: number, c: number, d: number, e: number) => [number, number, number];
-  readonly __wbg_pset_free: (a: number, b: number) => void;
-  readonly pset_new: (a: number, b: number) => [number, number, number];
-  readonly pset_toString: (a: number) => [number, number];
-  readonly pset_extractTx: (a: number) => [number, number, number];
-  readonly pset_uniqueId: (a: number) => [number, number, number];
-  readonly pset_combine: (a: number, b: number) => [number, number];
-  readonly pset_inputs: (a: number) => [number, number];
-  readonly pset_outputs: (a: number) => [number, number];
-  readonly pset_addDetails: (a: number, b: number) => [number, number];
-  readonly pset_finalize: (a: number) => [number, number, number];
-  readonly __wbg_psetinput_free: (a: number, b: number) => void;
-  readonly psetinput_previousTxid: (a: number) => number;
-  readonly psetinput_previousVout: (a: number) => number;
-  readonly psetinput_previousScriptPubkey: (a: number) => number;
-  readonly psetinput_redeemScript: (a: number) => number;
-  readonly psetinput_issuanceAsset: (a: number) => number;
-  readonly psetinput_issuanceToken: (a: number) => number;
-  readonly psetinput_issuance: (a: number) => number;
-  readonly psetinput_sighash: (a: number) => number;
-  readonly psetinput_issuanceIds: (a: number) => [number, number];
-  readonly __wbg_psetinputbuilder_free: (a: number, b: number) => void;
-  readonly psetinputbuilder_fromPrevout: (a: number) => number;
-  readonly psetinputbuilder_witnessUtxo: (a: number, b: number) => number;
-  readonly psetinputbuilder_sequence: (a: number, b: number) => number;
-  readonly psetinputbuilder_issuanceValueAmount: (a: number, b: bigint) => number;
-  readonly psetinputbuilder_issuanceInflationKeys: (a: number, b: bigint) => number;
-  readonly psetinputbuilder_issuanceAssetEntropy: (a: number, b: number) => number;
-  readonly psetinputbuilder_blindedIssuance: (a: number, b: number) => number;
-  readonly psetinputbuilder_issuanceBlindingNonce: (a: number, b: number) => number;
-  readonly psetinputbuilder_build: (a: number) => number;
-  readonly __wbg_psetoutput_free: (a: number, b: number) => void;
-  readonly psetoutput_scriptPubkey: (a: number) => number;
-  readonly psetoutput_amount: (a: number) => [number, bigint];
-  readonly psetoutput_asset: (a: number) => number;
-  readonly psetoutput_blinderIndex: (a: number) => number;
-  readonly __wbg_psetoutputbuilder_free: (a: number, b: number) => void;
-  readonly psetoutputbuilder_newExplicit: (a: number, b: bigint, c: number) => number;
-  readonly psetoutputbuilder_blindingPubkey: (a: number, b: number) => number;
-  readonly psetoutputbuilder_scriptPubkey: (a: number, b: number) => number;
-  readonly psetoutputbuilder_satoshi: (a: number, b: bigint) => number;
-  readonly psetoutputbuilder_asset: (a: number, b: number) => number;
-  readonly psetoutputbuilder_blinderIndex: (a: number, b: number) => number;
-  readonly psetoutputbuilder_build: (a: number) => number;
-  readonly __wbg_psetbuilder_free: (a: number, b: number) => void;
-  readonly psetbuilder_newV2: () => number;
-  readonly psetbuilder_addInput: (a: number, b: number) => number;
-  readonly psetbuilder_addOutput: (a: number, b: number) => number;
-  readonly psetbuilder_setFallbackLocktime: (a: number, b: number) => number;
-  readonly psetbuilder_blindLast: (a: number, b: number, c: number, d: number, e: number) => [number, number, number];
-  readonly psetbuilder_build: (a: number) => number;
   readonly __wbg_amp0_free: (a: number, b: number) => void;
   readonly amp0_newWithNetwork: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => any;
   readonly amp0_newTestnet: (a: number, b: number, c: number, d: number, e: number, f: number) => any;
@@ -4025,16 +4072,6 @@ export interface InitOutput {
   readonly lightningpayment_new: (a: number, b: number) => [number, number, number];
   readonly lightningpayment_toString: (a: number) => [number, number];
   readonly lightningpayment_toUriQr: (a: number, b: number) => [number, number, number, number];
-  readonly __wbg_ledgerweb_free: (a: number, b: number) => void;
-  readonly ledgerweb_new: (a: any, b: number) => number;
-  readonly ledgerweb_getVersion: (a: number) => any;
-  readonly ledgerweb_deriveXpub: (a: number, b: number, c: number) => any;
-  readonly ledgerweb_slip77MasterBlindingKey: (a: number) => any;
-  readonly ledgerweb_fingerprint: (a: number) => any;
-  readonly ledgerweb_wpkhSlip77Descriptor: (a: number) => any;
-  readonly ledgerweb_sign: (a: number, b: number) => any;
-  readonly ledgerweb_getReceiveAddressSingle: (a: number, b: number) => any;
-  readonly searchLedgerDevice: () => any;
   readonly __wbg_publickey_free: (a: number, b: number) => void;
   readonly publickey_fromString: (a: number, b: number) => [number, number, number];
   readonly publickey_fromBytes: (a: number, b: number) => [number, number, number];
@@ -4073,154 +4110,129 @@ export interface InitOutput {
   readonly cmr_toString: (a: number) => [number, number];
   readonly preparepayresponse_fee: (a: number) => [number, bigint];
   readonly valueblindingfactor_zero: () => number;
-  readonly __wbg_assetid_free: (a: number, b: number) => void;
-  readonly __wbg_assetids_free: (a: number, b: number) => void;
-  readonly assetid_fromString: (a: number, b: number) => [number, number, number];
-  readonly assetid_fromBytes: (a: number, b: number) => [number, number, number];
-  readonly assetid_toBytes: (a: number) => [number, number];
-  readonly assetid_toString: (a: number) => [number, number];
-  readonly generateAssetEntropy: (a: number, b: number) => [number, number, number];
-  readonly assetIdFromIssuance: (a: number, b: number) => number;
-  readonly reissuanceTokenFromIssuance: (a: number, b: number, c: number) => number;
-  readonly assetids_empty: () => [number, number, number];
-  readonly assetids_toString: (a: number) => [number, number];
-  readonly __wbg_outpoint_free: (a: number, b: number) => void;
-  readonly outpoint_new: (a: number, b: number) => [number, number, number];
-  readonly outpoint_fromParts: (a: number, b: number) => number;
-  readonly outpoint_txid: (a: number) => number;
-  readonly outpoint_vout: (a: number) => number;
-  readonly __wbg_script_free: (a: number, b: number) => void;
-  readonly script_new: (a: number, b: number) => [number, number, number];
-  readonly script_empty: () => number;
-  readonly script_bytes: (a: number) => [number, number];
-  readonly script_jet_sha256_hex: (a: number) => [number, number];
-  readonly script_asm: (a: number) => [number, number];
-  readonly script_newOpReturn: (a: number, b: number) => number;
-  readonly script_isProvablyUnspendable: (a: number) => number;
-  readonly script_isProvablySegwit: (a: number, b: number) => number;
-  readonly script_toString: (a: number) => [number, number];
-  readonly __wbg_transaction_free: (a: number, b: number) => void;
-  readonly transaction_new: (a: number, b: number) => [number, number, number];
-  readonly transaction_fromString: (a: number, b: number) => [number, number, number];
-  readonly transaction_fromBytes: (a: number, b: number) => [number, number, number];
-  readonly transaction_txid: (a: number) => number;
-  readonly transaction_bytes: (a: number) => [number, number];
-  readonly transaction_fee: (a: number, b: number) => bigint;
-  readonly transaction_toString: (a: number) => [number, number];
-  readonly transaction_inputs: (a: number) => [number, number];
-  readonly transaction_outputs: (a: number) => [number, number];
-  readonly __wbg_txid_free: (a: number, b: number) => void;
-  readonly txid_new: (a: number, b: number) => [number, number, number];
-  readonly txid_toString: (a: number) => [number, number];
-  readonly __wbg_transactioneditor_free: (a: number, b: number) => void;
-  readonly transactioneditor_fromTransaction: (a: number) => number;
-  readonly transactioneditor_setInputWitness: (a: number, b: number, c: number) => [number, number, number];
-  readonly transactioneditor_build: (a: number) => number;
-  readonly __wbg_txin_free: (a: number, b: number) => void;
-  readonly txin_outpoint: (a: number) => number;
-  readonly txin_witness: (a: number) => number;
-  readonly txin_sequence: (a: number) => number;
-  readonly __wbg_txinwitness_free: (a: number, b: number) => void;
-  readonly txinwitness_empty: () => number;
-  readonly txinwitness_fromScriptWitness: (a: number, b: number) => [number, number, number];
-  readonly txinwitness_script_witness: (a: number) => [number, number];
-  readonly txinwitness_pegin_witness: (a: number) => [number, number];
-  readonly txinwitness_isEmpty: (a: number) => number;
-  readonly __wbg_txinwitnessbuilder_free: (a: number, b: number) => void;
-  readonly txinwitnessbuilder_scriptWitness: (a: number, b: number, c: number) => [number, number, number];
-  readonly txinwitnessbuilder_peginWitness: (a: number, b: number, c: number) => [number, number, number];
-  readonly txinwitnessbuilder_amountRangeproof: (a: number, b: number, c: number) => [number, number, number];
-  readonly txinwitnessbuilder_inflationKeysRangeproof: (a: number, b: number, c: number) => [number, number, number];
-  readonly txinwitnessbuilder_build: (a: number) => number;
-  readonly __wbg_txout_free: (a: number, b: number) => void;
-  readonly txout_fromExplicit: (a: number, b: number, c: bigint) => number;
-  readonly txout_scriptPubkey: (a: number) => number;
-  readonly txout_isFee: (a: number) => number;
-  readonly txout_isPartiallyBlinded: (a: number) => number;
-  readonly txout_asset: (a: number) => number;
-  readonly txout_value: (a: number) => [number, bigint];
-  readonly txout_unconfidentialAddress: (a: number, b: number) => number;
-  readonly txout_unblind: (a: number, b: number) => [number, number, number];
-  readonly __wbg_mnemonic_free: (a: number, b: number) => void;
-  readonly mnemonic_new: (a: number, b: number) => [number, number, number];
-  readonly mnemonic_toString: (a: number) => [number, number];
-  readonly mnemonic_fromEntropy: (a: number, b: number) => [number, number, number];
-  readonly mnemonic_fromRandom: (a: number) => [number, number, number];
-  readonly __wbg_psetdetails_free: (a: number, b: number) => void;
-  readonly __wbg_psetbalance_free: (a: number, b: number) => void;
-  readonly __wbg_psetsignatures_free: (a: number, b: number) => void;
-  readonly __wbg_issuance_free: (a: number, b: number) => void;
-  readonly __wbg_recipient_free: (a: number, b: number) => void;
-  readonly psetdetails_balance: (a: number) => number;
-  readonly psetdetails_signatures: (a: number) => [number, number];
-  readonly psetdetails_fingerprintsMissing: (a: number) => [number, number];
-  readonly psetdetails_fingerprintsHas: (a: number) => [number, number];
-  readonly psetdetails_inputsIssuances: (a: number) => [number, number];
-  readonly psetbalance_fee: (a: number) => bigint;
-  readonly psetbalance_balances: (a: number) => number;
-  readonly psetbalance_recipients: (a: number) => [number, number];
-  readonly psetsignatures_hasSignature: (a: number) => any;
-  readonly psetsignatures_missingSignature: (a: number) => any;
-  readonly issuance_asset: (a: number) => number;
-  readonly issuance_token: (a: number) => number;
-  readonly issuance_prevVout: (a: number) => number;
-  readonly issuance_prevTxid: (a: number) => number;
-  readonly issuance_isIssuance: (a: number) => number;
-  readonly issuance_isReissuance: (a: number) => number;
-  readonly recipient_asset: (a: number) => number;
-  readonly recipient_value: (a: number) => [number, bigint];
-  readonly recipient_address: (a: number) => number;
-  readonly recipient_vout: (a: number) => number;
-  readonly __wbg_registry_free: (a: number, b: number) => void;
-  readonly __wbg_registrydata_free: (a: number, b: number) => void;
-  readonly __wbg_assetmeta_free: (a: number, b: number) => void;
-  readonly __wbg_registrypost_free: (a: number, b: number) => void;
-  readonly assetmeta_contract: (a: number) => number;
-  readonly assetmeta_tx: (a: number) => number;
-  readonly registrypost_new: (a: number, b: number) => number;
-  readonly registrypost_toString: (a: number) => [number, number];
-  readonly registry_new: (a: number, b: number, c: number) => any;
-  readonly registry_defaultForNetwork: (a: number, b: number) => any;
-  readonly registry_defaultHardcodedForNetwork: (a: number) => [number, number, number];
-  readonly registry_fetchWithTx: (a: number, b: number, c: number) => any;
-  readonly registry_post: (a: number, b: number) => any;
-  readonly registry_get: (a: number, b: number) => number;
-  readonly registry_getAssetOfToken: (a: number, b: number) => number;
-  readonly registry_addContracts: (a: number, b: number) => [number, number, number];
-  readonly registrydata_precision: (a: number) => number;
-  readonly registrydata_ticker: (a: number) => [number, number];
-  readonly registrydata_name: (a: number) => [number, number];
-  readonly registrydata_domain: (a: number) => [number, number];
-  readonly __wbg_txdetails_free: (a: number, b: number) => void;
-  readonly txdetails_tx: (a: number) => number;
-  readonly txdetails_txid: (a: number) => number;
-  readonly txdetails_height: (a: number) => number;
-  readonly txdetails_timestamp: (a: number) => number;
-  readonly txdetails_txType: (a: number) => [number, number];
-  readonly txdetails_balance: (a: number) => number;
-  readonly txdetails_feesAsset: (a: number, b: number) => bigint;
-  readonly txdetails_unblindedUrl: (a: number, b: number, c: number) => [number, number];
-  readonly txdetails_inputs: (a: number) => [number, number];
-  readonly txdetails_outputs: (a: number) => [number, number];
-  readonly __wbg_txoutdetails_free: (a: number, b: number) => void;
-  readonly txoutdetails_outpoint: (a: number) => number;
-  readonly txoutdetails_script_pubkey: (a: number) => number;
-  readonly txoutdetails_height: (a: number) => number;
-  readonly txoutdetails_address: (a: number) => number;
-  readonly txoutdetails_unblinded: (a: number) => number;
-  readonly txoutdetails_is_explicit: (a: number) => number;
-  readonly txoutdetails_is_spent: (a: number) => number;
-  readonly __wbg_txsopt_free: (a: number, b: number) => void;
-  readonly txsopt_default: () => number;
-  readonly txsopt_withPagination: (a: number, b: number) => number;
-  readonly __wbg_txopt_free: (a: number, b: number) => void;
-  readonly txopt_default: () => number;
-  readonly wollet_txs: (a: number, b: number) => [number, number, number, number];
-  readonly wollet_numTxs: (a: number) => [number, number, number];
-  readonly wollet_txDetails: (a: number, b: number, c: number) => [number, number, number];
-  readonly transaction_toBytes: (a: number) => [number, number];
-  readonly txinwitnessbuilder_new: () => number;
-  readonly assetid_new: (a: number, b: number) => [number, number, number];
+  readonly __wbg_externalutxo_free: (a: number, b: number) => void;
+  readonly externalutxo_new: (a: number, b: number, c: number, d: number, e: number) => [number, number, number];
+  readonly __wbg_pset_free: (a: number, b: number) => void;
+  readonly pset_new: (a: number, b: number) => [number, number, number];
+  readonly pset_toString: (a: number) => [number, number];
+  readonly pset_extractTx: (a: number) => [number, number, number];
+  readonly pset_uniqueId: (a: number) => [number, number, number];
+  readonly pset_combine: (a: number, b: number) => [number, number];
+  readonly pset_inputs: (a: number) => [number, number];
+  readonly pset_outputs: (a: number) => [number, number];
+  readonly pset_addDetails: (a: number, b: number) => [number, number];
+  readonly pset_finalize: (a: number) => [number, number, number];
+  readonly __wbg_psetinput_free: (a: number, b: number) => void;
+  readonly psetinput_previousTxid: (a: number) => number;
+  readonly psetinput_previousVout: (a: number) => number;
+  readonly psetinput_previousScriptPubkey: (a: number) => number;
+  readonly psetinput_redeemScript: (a: number) => number;
+  readonly psetinput_issuanceAsset: (a: number) => number;
+  readonly psetinput_issuanceToken: (a: number) => number;
+  readonly psetinput_issuance: (a: number) => number;
+  readonly psetinput_sighash: (a: number) => number;
+  readonly psetinput_issuanceIds: (a: number) => [number, number];
+  readonly __wbg_psetinputbuilder_free: (a: number, b: number) => void;
+  readonly psetinputbuilder_fromPrevout: (a: number) => number;
+  readonly psetinputbuilder_witnessUtxo: (a: number, b: number) => number;
+  readonly psetinputbuilder_sequence: (a: number, b: number) => number;
+  readonly psetinputbuilder_issuanceValueAmount: (a: number, b: bigint) => number;
+  readonly psetinputbuilder_issuanceInflationKeys: (a: number, b: bigint) => number;
+  readonly psetinputbuilder_issuanceAssetEntropy: (a: number, b: number) => number;
+  readonly psetinputbuilder_blindedIssuance: (a: number, b: number) => number;
+  readonly psetinputbuilder_issuanceBlindingNonce: (a: number, b: number) => number;
+  readonly psetinputbuilder_build: (a: number) => number;
+  readonly __wbg_psetoutput_free: (a: number, b: number) => void;
+  readonly psetoutput_scriptPubkey: (a: number) => number;
+  readonly psetoutput_amount: (a: number) => [number, bigint];
+  readonly psetoutput_asset: (a: number) => number;
+  readonly psetoutput_blinderIndex: (a: number) => number;
+  readonly __wbg_psetoutputbuilder_free: (a: number, b: number) => void;
+  readonly psetoutputbuilder_newExplicit: (a: number, b: bigint, c: number) => number;
+  readonly psetoutputbuilder_blindingPubkey: (a: number, b: number) => number;
+  readonly psetoutputbuilder_scriptPubkey: (a: number, b: number) => number;
+  readonly psetoutputbuilder_satoshi: (a: number, b: bigint) => number;
+  readonly psetoutputbuilder_asset: (a: number, b: number) => number;
+  readonly psetoutputbuilder_blinderIndex: (a: number, b: number) => number;
+  readonly psetoutputbuilder_build: (a: number) => number;
+  readonly __wbg_psetbuilder_free: (a: number, b: number) => void;
+  readonly psetbuilder_newV2: () => number;
+  readonly psetbuilder_addInput: (a: number, b: number) => number;
+  readonly psetbuilder_addOutput: (a: number, b: number) => number;
+  readonly psetbuilder_setFallbackLocktime: (a: number, b: number) => number;
+  readonly psetbuilder_blindLast: (a: number, b: number, c: number, d: number, e: number) => [number, number, number];
+  readonly psetbuilder_build: (a: number) => number;
+  readonly __wbg_blockheader_free: (a: number, b: number) => void;
+  readonly blockheader_blockHash: (a: number) => [number, number];
+  readonly blockheader_prevBlockhash: (a: number) => [number, number];
+  readonly blockheader_merkleRoot: (a: number) => [number, number];
+  readonly blockheader_time: (a: number) => number;
+  readonly blockheader_version: (a: number) => number;
+  readonly blockheader_height: (a: number) => number;
+  readonly __wbg_locktime_free: (a: number, b: number) => void;
+  readonly locktime_from_consensus: (a: number) => number;
+  readonly locktime_from_height: (a: number) => [number, number, number];
+  readonly locktime_from_time: (a: number) => [number, number, number];
+  readonly locktime_zero: () => number;
+  readonly locktime_toConsensusU32: (a: number) => number;
+  readonly locktime_isBlockHeight: (a: number) => number;
+  readonly locktime_isBlockTime: (a: number) => number;
+  readonly locktime_toString: (a: number) => [number, number];
+  readonly __wbg_network_free: (a: number, b: number) => void;
+  readonly network_mainnet: () => number;
+  readonly network_testnet: () => number;
+  readonly network_regtest: (a: number) => number;
+  readonly network_regtestDefault: () => number;
+  readonly network_defaultEsploraClient: (a: number) => number;
+  readonly network_isMainnet: (a: number) => number;
+  readonly network_isTestnet: (a: number) => number;
+  readonly network_isRegtest: (a: number) => number;
+  readonly network_toString: (a: number) => [number, number];
+  readonly network_policyAsset: (a: number) => number;
+  readonly network_genesisBlockHash: (a: number) => [number, number];
+  readonly network_txBuilder: (a: number) => number;
+  readonly network_defaultExplorerUrl: (a: number) => [number, number];
+  readonly __wbg_tweak_free: (a: number, b: number) => void;
+  readonly tweak_fromBytes: (a: number, b: number) => [number, number, number];
+  readonly tweak_fromString: (a: number, b: number) => [number, number, number];
+  readonly tweak_zero: () => number;
+  readonly tweak_toBytes: (a: number) => [number, number];
+  readonly tweak_toString: (a: number) => [number, number];
+  readonly __wbg_xonlypublickey_free: (a: number, b: number) => void;
+  readonly xonlypublickey_fromString: (a: number, b: number) => [number, number, number];
+  readonly xonlypublickey_fromBytes: (a: number, b: number) => [number, number, number];
+  readonly xonlypublickey_toBytes: (a: number) => [number, number];
+  readonly xonlypublickey_toString: (a: number) => [number, number];
+  readonly __wbg_xpub_free: (a: number, b: number) => void;
+  readonly xpub_new: (a: number, b: number) => [number, number, number];
+  readonly xpub_toString: (a: number) => [number, number];
+  readonly xpub_identifier: (a: number) => [number, number];
+  readonly xpub_fingerprint: (a: number) => [number, number];
+  readonly xpub_isValidWithKeyOrigin: (a: number, b: number) => number;
+  readonly __wbg_amp2_free: (a: number, b: number) => void;
+  readonly __wbg_amp2descriptor_free: (a: number, b: number) => void;
+  readonly amp2descriptor_descriptor: (a: number) => number;
+  readonly amp2descriptor_toString: (a: number) => [number, number];
+  readonly amp2_new: (a: number, b: number, c: number, d: number) => [number, number, number];
+  readonly amp2_newTestnet: () => number;
+  readonly amp2_descriptorFromStr: (a: number, b: number, c: number, d: number, e: number) => [number, number, number];
+  readonly amp2_register: (a: number, b: number) => any;
+  readonly amp2_cosign: (a: number, b: number) => any;
+  readonly __wbg_contract_free: (a: number, b: number) => void;
+  readonly contract_new: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number) => [number, number, number];
+  readonly contract_toString: (a: number) => [number, number];
+  readonly contract_domain: (a: number) => [number, number];
+  readonly contract_clone: (a: number) => number;
+  readonly __wbg_wolletdescriptor_free: (a: number, b: number) => void;
+  readonly wolletdescriptor_new: (a: number, b: number) => [number, number, number];
+  readonly wolletdescriptor_toString: (a: number) => [number, number];
+  readonly wolletdescriptor_newMultiWshSlip77: (a: number, b: number, c: number) => [number, number, number];
+  readonly wolletdescriptor_isMainnet: (a: number) => number;
+  readonly wolletdescriptor_isAmp0: (a: number) => number;
+  readonly __wbg_magicroutinghint_free: (a: number, b: number) => void;
+  readonly magicroutinghint_address: (a: number) => [number, number];
+  readonly magicroutinghint_amount: (a: number) => bigint;
+  readonly magicroutinghint_uri: (a: number) => [number, number];
   readonly rust_0_7_malloc: (a: number) => number;
   readonly rust_0_7_calloc: (a: number, b: number) => number;
   readonly rust_0_7_free: (a: number) => void;
@@ -4243,12 +4255,12 @@ export interface InitOutput {
   readonly __externref_table_dealloc: (a: number) => void;
   readonly __wbindgen_free: (a: number, b: number, c: number) => void;
   readonly __externref_drop_slice: (a: number, b: number) => void;
-  readonly closure490_externref_shim: (a: number, b: number, c: any) => void;
-  readonly closure3027_externref_shim: (a: number, b: number, c: any) => void;
-  readonly wasm_bindgen__convert__closures_____invoke__hd5b0d606127cac00: (a: number, b: number) => void;
-  readonly closure3867_externref_shim: (a: number, b: number, c: any) => void;
+  readonly closure3023_externref_shim: (a: number, b: number, c: any) => void;
   readonly wasm_bindgen__convert__closures_____invoke__h34dad98c3d3cf6df: (a: number, b: number) => void;
-  readonly closure4741_externref_shim: (a: number, b: number, c: any, d: any) => void;
+  readonly closure3864_externref_shim: (a: number, b: number, c: any) => void;
+  readonly closure486_externref_shim: (a: number, b: number, c: any) => void;
+  readonly wasm_bindgen__convert__closures_____invoke__hd5b0d606127cac00: (a: number, b: number) => void;
+  readonly closure4738_externref_shim: (a: number, b: number, c: any, d: any) => void;
   readonly __wbindgen_start: () => void;
 }
 

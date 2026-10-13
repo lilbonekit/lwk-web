@@ -234,29 +234,47 @@ function _assertClass(instance, klass) {
         throw new Error(`expected instance of ${klass.name}`);
     }
 }
-
-function passArrayJsValueToWasm0(array, malloc) {
-    const ptr = malloc(array.length * 4, 4) >>> 0;
-    for (let i = 0; i < array.length; i++) {
-        const add = addToExternrefTable0(array[i]);
-        getDataViewMemory0().setUint32(ptr + 4 * i, add, true);
+/**
+ * Generate the asset entropy from the issuance prevout and the contract hash.
+ * @param {OutPoint} outpoint
+ * @param {ContractHash} contract_hash
+ * @returns {ContractHash}
+ */
+export function generateAssetEntropy(outpoint, contract_hash) {
+    _assertClass(outpoint, OutPoint);
+    _assertClass(contract_hash, ContractHash);
+    const ret = wasm.generateAssetEntropy(outpoint.__wbg_ptr, contract_hash.__wbg_ptr);
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
     }
-    WASM_VECTOR_LEN = array.length;
-    return ptr;
+    return ContractHash.__wrap(ret[0]);
 }
 
-let cachedUint32ArrayMemory0 = null;
-
-function getUint32ArrayMemory0() {
-    if (cachedUint32ArrayMemory0 === null || cachedUint32ArrayMemory0.byteLength === 0) {
-        cachedUint32ArrayMemory0 = new Uint32Array(wasm.memory.buffer);
-    }
-    return cachedUint32ArrayMemory0;
+/**
+ * Compute the asset ID from an issuance outpoint and contract hash.
+ * @param {OutPoint} outpoint
+ * @param {ContractHash} contract_hash
+ * @returns {AssetId}
+ */
+export function assetIdFromIssuance(outpoint, contract_hash) {
+    _assertClass(outpoint, OutPoint);
+    _assertClass(contract_hash, ContractHash);
+    const ret = wasm.assetIdFromIssuance(outpoint.__wbg_ptr, contract_hash.__wbg_ptr);
+    return AssetId.__wrap(ret);
 }
 
-function getArrayU32FromWasm0(ptr, len) {
-    ptr = ptr >>> 0;
-    return getUint32ArrayMemory0().subarray(ptr / 4, ptr / 4 + len);
+/**
+ * Compute the reissuance token ID from an issuance outpoint and contract hash.
+ * @param {OutPoint} outpoint
+ * @param {ContractHash} contract_hash
+ * @param {boolean} is_confidential
+ * @returns {AssetId}
+ */
+export function reissuanceTokenFromIssuance(outpoint, contract_hash, is_confidential) {
+    _assertClass(outpoint, OutPoint);
+    _assertClass(contract_hash, ContractHash);
+    const ret = wasm.reissuanceTokenFromIssuance(outpoint.__wbg_ptr, contract_hash.__wbg_ptr, is_confidential);
+    return AssetId.__wrap(ret);
 }
 
 function getArrayJsValueFromWasm0(ptr, len) {
@@ -269,6 +287,24 @@ function getArrayJsValueFromWasm0(ptr, len) {
     wasm.__externref_drop_slice(ptr, len);
     return result;
 }
+
+function passArrayJsValueToWasm0(array, malloc) {
+    const ptr = malloc(array.length * 4, 4) >>> 0;
+    for (let i = 0; i < array.length; i++) {
+        const add = addToExternrefTable0(array[i]);
+        getDataViewMemory0().setUint32(ptr + 4 * i, add, true);
+    }
+    WASM_VECTOR_LEN = array.length;
+    return ptr;
+}
+/**
+ * @returns {Promise<HIDDevice>}
+ */
+export function searchLedgerDevice() {
+    const ret = wasm.searchLedgerDevice();
+    return ret;
+}
+
 /**
  * Convert bytes to hex string.
  * TODO: this is a function for convenience, it is going to be deleted after all interfaces are
@@ -325,6 +361,20 @@ export function simplicityControlBlock(cmr, internal_key) {
     return ControlBlock.__wrap(ret[0]);
 }
 
+let cachedUint32ArrayMemory0 = null;
+
+function getUint32ArrayMemory0() {
+    if (cachedUint32ArrayMemory0 === null || cachedUint32ArrayMemory0.byteLength === 0) {
+        cachedUint32ArrayMemory0 = new Uint32Array(wasm.memory.buffer);
+    }
+    return cachedUint32ArrayMemory0;
+}
+
+function getArrayU32FromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    return getUint32ArrayMemory0().subarray(ptr / 4, ptr / 4 + len);
+}
+
 function passArray32ToWasm0(arg, malloc) {
     const ptr = malloc(arg.length * 4, 4) >>> 0;
     getUint32ArrayMemory0().set(arg, ptr / 4);
@@ -363,79 +413,28 @@ export function stringToQr(str, pixel_per_module) {
     }
 }
 
-/**
- * @returns {Promise<HIDDevice>}
- */
-export function searchLedgerDevice() {
-    const ret = wasm.searchLedgerDevice();
-    return ret;
+function __wbg_adapter_8(arg0, arg1, arg2) {
+    wasm.closure3023_externref_shim(arg0, arg1, arg2);
 }
 
-/**
- * Generate the asset entropy from the issuance prevout and the contract hash.
- * @param {OutPoint} outpoint
- * @param {ContractHash} contract_hash
- * @returns {ContractHash}
- */
-export function generateAssetEntropy(outpoint, contract_hash) {
-    _assertClass(outpoint, OutPoint);
-    _assertClass(contract_hash, ContractHash);
-    const ret = wasm.generateAssetEntropy(outpoint.__wbg_ptr, contract_hash.__wbg_ptr);
-    if (ret[2]) {
-        throw takeFromExternrefTable0(ret[1]);
-    }
-    return ContractHash.__wrap(ret[0]);
-}
-
-/**
- * Compute the asset ID from an issuance outpoint and contract hash.
- * @param {OutPoint} outpoint
- * @param {ContractHash} contract_hash
- * @returns {AssetId}
- */
-export function assetIdFromIssuance(outpoint, contract_hash) {
-    _assertClass(outpoint, OutPoint);
-    _assertClass(contract_hash, ContractHash);
-    const ret = wasm.assetIdFromIssuance(outpoint.__wbg_ptr, contract_hash.__wbg_ptr);
-    return AssetId.__wrap(ret);
-}
-
-/**
- * Compute the reissuance token ID from an issuance outpoint and contract hash.
- * @param {OutPoint} outpoint
- * @param {ContractHash} contract_hash
- * @param {boolean} is_confidential
- * @returns {AssetId}
- */
-export function reissuanceTokenFromIssuance(outpoint, contract_hash, is_confidential) {
-    _assertClass(outpoint, OutPoint);
-    _assertClass(contract_hash, ContractHash);
-    const ret = wasm.reissuanceTokenFromIssuance(outpoint.__wbg_ptr, contract_hash.__wbg_ptr, is_confidential);
-    return AssetId.__wrap(ret);
-}
-
-function __wbg_adapter_6(arg0, arg1, arg2) {
-    wasm.closure490_externref_shim(arg0, arg1, arg2);
-}
-
-function __wbg_adapter_11(arg0, arg1, arg2) {
-    wasm.closure3027_externref_shim(arg0, arg1, arg2);
-}
-
-function __wbg_adapter_26(arg0, arg1) {
-    wasm.wasm_bindgen__convert__closures_____invoke__hd5b0d606127cac00(arg0, arg1);
-}
-
-function __wbg_adapter_31(arg0, arg1, arg2) {
-    wasm.closure3867_externref_shim(arg0, arg1, arg2);
-}
-
-function __wbg_adapter_34(arg0, arg1) {
+function __wbg_adapter_11(arg0, arg1) {
     wasm.wasm_bindgen__convert__closures_____invoke__h34dad98c3d3cf6df(arg0, arg1);
 }
 
-function __wbg_adapter_966(arg0, arg1, arg2, arg3) {
-    wasm.closure4741_externref_shim(arg0, arg1, arg2, arg3);
+function __wbg_adapter_14(arg0, arg1, arg2) {
+    wasm.closure3864_externref_shim(arg0, arg1, arg2);
+}
+
+function __wbg_adapter_25(arg0, arg1, arg2) {
+    wasm.closure486_externref_shim(arg0, arg1, arg2);
+}
+
+function __wbg_adapter_34(arg0, arg1) {
+    wasm.wasm_bindgen__convert__closures_____invoke__hd5b0d606127cac00(arg0, arg1);
+}
+
+function __wbg_adapter_968(arg0, arg1, arg2, arg3) {
+    wasm.closure4738_externref_shim(arg0, arg1, arg2, arg3);
 }
 
 /**
@@ -8519,6 +8518,28 @@ export class TxBuilder {
         return TxBuilder.__wrap(ret[0]);
     }
     /**
+     * Return the PSET without blinding it: outputs keep explicit amounts and their blinding
+     * pubkey, so another party (e.g. the wallet that knows the inputs' blinding factors)
+     * can blind them later. External UTXOs may then use secrets without blinding factors.
+     * @returns {TxBuilder}
+     */
+    skipBlinding() {
+        const ptr = this.__destroy_into_raw();
+        const ret = wasm.txbuilder_skipBlinding(ptr);
+        return TxBuilder.__wrap(ret);
+    }
+    /**
+     * Send every change output to `address` instead of a wallet change address
+     * @param {Address} address
+     * @returns {TxBuilder}
+     */
+    setChangeAddress(address) {
+        const ptr = this.__destroy_into_raw();
+        _assertClass(address, Address);
+        const ret = wasm.txbuilder_setChangeAddress(ptr, address.__wbg_ptr);
+        return TxBuilder.__wrap(ret);
+    }
+    /**
      * Add input rangeproofs
      * @param {boolean} add_rangeproofs
      * @returns {TxBuilder}
@@ -10047,7 +10068,7 @@ export class WalletTx {
      * @returns {number | undefined}
      */
     height() {
-        const ret = wasm.wallettx_height(this.__wbg_ptr);
+        const ret = wasm.txdetails_height(this.__wbg_ptr);
         return ret === 0x100000001 ? undefined : ret;
     }
     /**
@@ -10095,7 +10116,7 @@ export class WalletTx {
      * @returns {number | undefined}
      */
     timestamp() {
-        const ret = wasm.wallettx_timestamp(this.__wbg_ptr);
+        const ret = wasm.txdetails_timestamp(this.__wbg_ptr);
         return ret === 0x100000001 ? undefined : ret;
     }
     /**
@@ -10193,7 +10214,7 @@ export class WalletTxOut {
      * @returns {number | undefined}
      */
     height() {
-        const ret = wasm.wallettx_height(this.__wbg_ptr);
+        const ret = wasm.wallettxout_height(this.__wbg_ptr);
         return ret === 0x100000001 ? undefined : ret;
     }
     /**
@@ -10257,6 +10278,51 @@ export class Wollet {
     free() {
         const ptr = this.__destroy_into_raw();
         wasm.__wbg_wollet_free(ptr, 0);
+    }
+    /**
+     * Get the transaction list
+     *
+     * **Experimental**: This API may change without notice.
+     * @param {TxsOpt} opt
+     * @returns {TxDetails[]}
+     */
+    txs(opt) {
+        _assertClass(opt, TxsOpt);
+        const ret = wasm.wollet_txs(this.__wbg_ptr, opt.__wbg_ptr);
+        if (ret[3]) {
+            throw takeFromExternrefTable0(ret[2]);
+        }
+        var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * Number of transactions
+     * @returns {number}
+     */
+    numTxs() {
+        const ret = wasm.wollet_numTxs(this.__wbg_ptr);
+        if (ret[2]) {
+            throw takeFromExternrefTable0(ret[1]);
+        }
+        return ret[0] >>> 0;
+    }
+    /**
+     * Get the details of a transaction
+     *
+     * **Experimental**: This API may change without notice.
+     * @param {Txid} txid
+     * @param {TxOpt} opt
+     * @returns {TxDetails | undefined}
+     */
+    txDetails(txid, opt) {
+        _assertClass(txid, Txid);
+        _assertClass(opt, TxOpt);
+        const ret = wasm.wollet_txDetails(this.__wbg_ptr, txid.__wbg_ptr, opt.__wbg_ptr);
+        if (ret[2]) {
+            throw takeFromExternrefTable0(ret[1]);
+        }
+        return ret[0] === 0 ? undefined : TxDetails.__wrap(ret[0]);
     }
     /**
      * Create a `Wollet`
@@ -10529,51 +10595,6 @@ export class Wollet {
     isAmp0() {
         const ret = wasm.wollet_isAmp0(this.__wbg_ptr);
         return ret !== 0;
-    }
-    /**
-     * Get the transaction list
-     *
-     * **Experimental**: This API may change without notice.
-     * @param {TxsOpt} opt
-     * @returns {TxDetails[]}
-     */
-    txs(opt) {
-        _assertClass(opt, TxsOpt);
-        const ret = wasm.wollet_txs(this.__wbg_ptr, opt.__wbg_ptr);
-        if (ret[3]) {
-            throw takeFromExternrefTable0(ret[2]);
-        }
-        var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
-        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
-        return v1;
-    }
-    /**
-     * Number of transactions
-     * @returns {number}
-     */
-    numTxs() {
-        const ret = wasm.wollet_numTxs(this.__wbg_ptr);
-        if (ret[2]) {
-            throw takeFromExternrefTable0(ret[1]);
-        }
-        return ret[0] >>> 0;
-    }
-    /**
-     * Get the details of a transaction
-     *
-     * **Experimental**: This API may change without notice.
-     * @param {Txid} txid
-     * @param {TxOpt} opt
-     * @returns {TxDetails | undefined}
-     */
-    txDetails(txid, opt) {
-        _assertClass(txid, Txid);
-        _assertClass(opt, TxOpt);
-        const ret = wasm.wollet_txDetails(this.__wbg_ptr, txid.__wbg_ptr, opt.__wbg_ptr);
-        if (ret[2]) {
-            throw takeFromExternrefTable0(ret[1]);
-        }
-        return ret[0] === 0 ? undefined : TxDetails.__wrap(ret[0]);
     }
 }
 if (Symbol.dispose) Wollet.prototype[Symbol.dispose] = Wollet.prototype.free;
@@ -11351,7 +11372,7 @@ function __wbg_get_imports() {
                 const a = state0.a;
                 state0.a = 0;
                 try {
-                    return __wbg_adapter_966(a, state0.b, arg0, arg1);
+                    return __wbg_adapter_968(a, state0.b, arg0, arg1);
                 } finally {
                     state0.a = a;
                 }
@@ -11830,14 +11851,9 @@ function __wbg_get_imports() {
         const ret = Xpub.__wrap(arg0);
         return ret;
     };
-    imports.wbg.__wbindgen_cast_11b3b59bb7bf9666 = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 489, function: Function { arguments: [NamedExternref("HIDInputReportEvent")], shim_idx: 490, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, 489, __wbg_adapter_6);
-        return ret;
-    };
-    imports.wbg.__wbindgen_cast_15316901c5ea74f3 = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 3830, function: Function { arguments: [], shim_idx: 3831, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, 3830, __wbg_adapter_26);
+    imports.wbg.__wbindgen_cast_06a2a0d3af83a576 = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 3022, function: Function { arguments: [NamedExternref("CloseEvent")], shim_idx: 3023, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+        const ret = makeMutClosure(arg0, arg1, 3022, __wbg_adapter_8);
         return ret;
     };
     imports.wbg.__wbindgen_cast_2241b6af4c4b2941 = function(arg0, arg1) {
@@ -11845,14 +11861,9 @@ function __wbg_get_imports() {
         const ret = getStringFromWasm0(arg0, arg1);
         return ret;
     };
-    imports.wbg.__wbindgen_cast_3219b6f2fafd6d88 = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 3026, function: Function { arguments: [NamedExternref("MessageEvent")], shim_idx: 3027, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, 3026, __wbg_adapter_11);
-        return ret;
-    };
-    imports.wbg.__wbindgen_cast_3b93b6e75eabff78 = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 3026, function: Function { arguments: [NamedExternref("Event")], shim_idx: 3027, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, 3026, __wbg_adapter_11);
+    imports.wbg.__wbindgen_cast_2ff4f2f578af8e12 = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 3022, function: Function { arguments: [NamedExternref("ErrorEvent")], shim_idx: 3023, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+        const ret = makeMutClosure(arg0, arg1, 3022, __wbg_adapter_8);
         return ret;
     };
     imports.wbg.__wbindgen_cast_4625c577ab2ec9ee = function(arg0) {
@@ -11860,9 +11871,24 @@ function __wbg_get_imports() {
         const ret = BigInt.asUintN(64, arg0);
         return ret;
     };
-    imports.wbg.__wbindgen_cast_786d37834b1de09c = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 3172, function: Function { arguments: [], shim_idx: 3173, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, 3172, __wbg_adapter_34);
+    imports.wbg.__wbindgen_cast_555f5e33bca91b3c = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 3022, function: Function { arguments: [NamedExternref("Event")], shim_idx: 3023, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+        const ret = makeMutClosure(arg0, arg1, 3022, __wbg_adapter_8);
+        return ret;
+    };
+    imports.wbg.__wbindgen_cast_65eab33d253b828e = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 485, function: Function { arguments: [NamedExternref("HIDInputReportEvent")], shim_idx: 486, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+        const ret = makeMutClosure(arg0, arg1, 485, __wbg_adapter_25);
+        return ret;
+    };
+    imports.wbg.__wbindgen_cast_68f01c3ca8aff042 = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 3022, function: Function { arguments: [NamedExternref("MessageEvent")], shim_idx: 3023, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+        const ret = makeMutClosure(arg0, arg1, 3022, __wbg_adapter_8);
+        return ret;
+    };
+    imports.wbg.__wbindgen_cast_7f1d3a19b44c4ea8 = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 3168, function: Function { arguments: [], shim_idx: 3169, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+        const ret = makeMutClosure(arg0, arg1, 3168, __wbg_adapter_11);
         return ret;
     };
     imports.wbg.__wbindgen_cast_9ae0607507abb057 = function(arg0) {
@@ -11870,29 +11896,24 @@ function __wbg_get_imports() {
         const ret = arg0;
         return ret;
     };
-    imports.wbg.__wbindgen_cast_a3ca2c892e8a69e0 = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 3866, function: Function { arguments: [Externref], shim_idx: 3867, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, 3866, __wbg_adapter_31);
-        return ret;
-    };
-    imports.wbg.__wbindgen_cast_bdc9ec9e044025e7 = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 3026, function: Function { arguments: [NamedExternref("CloseEvent")], shim_idx: 3027, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, 3026, __wbg_adapter_11);
-        return ret;
-    };
-    imports.wbg.__wbindgen_cast_c3249a4699df27d6 = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 3026, function: Function { arguments: [NamedExternref("ErrorEvent")], shim_idx: 3027, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, 3026, __wbg_adapter_11);
-        return ret;
-    };
     imports.wbg.__wbindgen_cast_cb9088102bce6b30 = function(arg0, arg1) {
         // Cast intrinsic for `Ref(Slice(U8)) -> NamedExternref("Uint8Array")`.
         const ret = getArrayU8FromWasm0(arg0, arg1);
         return ret;
     };
+    imports.wbg.__wbindgen_cast_ce1ad7a7a457d10d = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 3827, function: Function { arguments: [], shim_idx: 3828, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+        const ret = makeMutClosure(arg0, arg1, 3827, __wbg_adapter_34);
+        return ret;
+    };
     imports.wbg.__wbindgen_cast_d6cd19b81560fd6e = function(arg0) {
         // Cast intrinsic for `F64 -> Externref`.
         const ret = arg0;
+        return ret;
+    };
+    imports.wbg.__wbindgen_cast_ef8e63c7de6ac283 = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 3863, function: Function { arguments: [Externref], shim_idx: 3864, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+        const ret = makeMutClosure(arg0, arg1, 3863, __wbg_adapter_14);
         return ret;
     };
     imports.wbg.__wbindgen_init_externref_table = function() {
