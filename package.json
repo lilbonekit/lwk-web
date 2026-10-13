@@ -1,6 +1,6 @@
 {
 	"name": "@lilbonekit/lwk-web",
-	"version": "0.17.2-ad2a290.1",
+	"version": "0.17.2-22d0c8f.1",
 	"type": "module",
 	"description": "Liquid Wallet Kit WASM build",
 	"license": "MIT OR BSD-2-Clause",
